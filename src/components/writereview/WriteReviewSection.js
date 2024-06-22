@@ -1,24 +1,27 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Line from "../common/Line";
 import styled from "styled-components";
 import uploadposter from "../../assets/icon/poster.png";
 import { DisplayMd, BodyMediumXs } from "../../styles/font";
 import StarRate from "./StarRate";
-const WriteReviewSection = () => {
-  const [inputValues, setInputValues] = useState({
-    title: "",
-    review: "",
-    username: "",
-    password: "",
-  });
+import { useParams } from "react-router-dom";
+import { instance } from "../../api/instance";
+
+const WriteReviewSection = ({
+  reviewData,
+  onReviewDataChange,
+  onSubmit,
+  formRef,
+}) => {
+  const { reviewid } = useParams();
 
   const [previewSource, setPreviewSource] = useState(uploadposter);
   const fileInputRef = useRef(null);
 
   const onInputHandler = (e) => {
     const { name, value } = e.target;
-    setInputValues({
-      ...inputValues,
+    onReviewDataChange({
+      ...reviewData,
       [name]: value,
     });
   };
@@ -32,87 +35,119 @@ const WriteReviewSection = () => {
     reader.onloadend = () => {
       setPreviewSource(reader.result);
     };
+    onReviewDataChange({
+      ...reviewData,
+      poster: uploadFile,
+    });
   };
 
   const handleImageClick = () => {
     fileInputRef.current.click();
   };
 
+  const handleRatingChange = (rating) => {
+    onReviewDataChange({
+      ...reviewData,
+      rating,
+    });
+  };
+
+  useEffect(() => {
+    if (reviewid) {
+      const fetchReviewData = async () => {
+        try {
+          const res = await instance.get(`/critique/review/${reviewid}/`);
+          onReviewDataChange(res.data);
+        } catch (err) {
+          alert(err);
+        }
+      };
+      fetchReviewData();
+    }
+  }, [reviewid, onReviewDataChange]);
+
   return (
     <WriteReviewContainer>
       <Line />
-      <div className="poster">
-        <DisplayMd>Poster</DisplayMd>
-        <PosterImg src={previewSource} onClick={handleImageClick} />
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleUpload}
-          style={{ display: "none" }}
-        />
-      </div>
-      <Line />
-      <div className="film-title">
-        <div className="word-limit">
-          <DisplayMd>Film Title</DisplayMd>
-          <BodyMediumXs>{inputValues.title.length}/30</BodyMediumXs>
+      <form onSubmit={() => onSubmit(reviewData)} ref={formRef}>
+        <div className="poster">
+          <DisplayMd>Poster</DisplayMd>
+          <PosterImg src={previewSource} onClick={handleImageClick} />
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleUpload}
+            style={{ display: "none" }}
+          />
         </div>
-        <ShortInput
-          name="title"
-          onChange={onInputHandler}
-          maxLength="30"
-          value={inputValues.title}
-        />
-      </div>
-      <Line />
-      <div className="rate">
-        <DisplayMd>Rate</DisplayMd>
-        <StarRate />
-      </div>
-      <Line />
-      <div className="date-watched">
-        <DisplayMd>Date Watched</DisplayMd>
-        <ShortInput name="dateWatched" onChange={onInputHandler} />
-      </div>
-      <Line />
-      <div className="review">
-        <div className="word-limit">
-          <DisplayMd>Review</DisplayMd>
-          <BodyMediumXs>{inputValues.review.length}/1000</BodyMediumXs>
+        <Line />
+        <div className="film-title">
+          <div className="word-limit">
+            <DisplayMd>Film Title</DisplayMd>
+            <BodyMediumXs>{reviewData.title.length}/30</BodyMediumXs>
+          </div>
+          <ShortInput
+            name="title"
+            onChange={onInputHandler}
+            maxLength="30"
+            value={reviewData.title}
+          />
         </div>
-        <ReviewInput
-          name="review"
-          onChange={onInputHandler}
-          maxLength="1000"
-          value={inputValues.review}
-        />
-      </div>
-      <Line />
-      <div className="username">
-        <div className="word-limit">
-          <DisplayMd>Username</DisplayMd>
-          <BodyMediumXs>{inputValues.username.length}/20</BodyMediumXs>
+        <Line />
+        <div className="rate">
+          <DisplayMd>Rate</DisplayMd>
+          <StarRate onChange={handleRatingChange} value={reviewData.rating} />
         </div>
-        <ShortInput
-          name="username"
-          onChange={onInputHandler}
-          maxLength="20"
-          value={inputValues.username}
-        />
-      </div>
-      <Line />
-      <div className="password">
-        <div className="word-limit">
-          <DisplayMd>Password</DisplayMd>
-          <BodyMediumXs>{inputValues.password.length}/6</BodyMediumXs>
+        <Line />
+        <div className="date-watched">
+          <DisplayMd>Date Watched</DisplayMd>
+          <ShortInput
+            name="dateWatched"
+            onChange={onInputHandler}
+            placeholder=""
+            value={reviewData.dataWatched}
+          />
         </div>
-        <ShortInput
-          name="password"
-          onChange={onInputHandler}
-          maxLength="6"
-          value={inputValues.password}
-        />
-      </div>
+        <Line />
+        <div className="review">
+          <div className="word-limit">
+            <DisplayMd>Review</DisplayMd>
+            <BodyMediumXs>{reviewData.review.length}/1000</BodyMediumXs>
+          </div>
+          <ReviewInput
+            name="review"
+            onChange={onInputHandler}
+            maxLength="1000"
+            value={reviewData.review}
+          />
+        </div>
+        <Line />
+        <div className="username">
+          <div className="word-limit">
+            <DisplayMd>Username</DisplayMd>
+            <BodyMediumXs>{reviewData.username.length}/20</BodyMediumXs>
+          </div>
+          <ShortInput
+            name="username"
+            onChange={onInputHandler}
+            maxLength="20"
+            value={reviewData.username}
+          />
+        </div>
+        <Line />
+        <div className="password">
+          <div className="word-limit">
+            <DisplayMd>Password</DisplayMd>
+            <BodyMediumXs>{reviewData.password.length}/6</BodyMediumXs>
+          </div>
+          <ShortInput
+            name="password"
+            onChange={onInputHandler}
+            maxLength="6"
+            value={reviewData.password}
+          />
+        </div>
+      </form>
     </WriteReviewContainer>
   );
 };
